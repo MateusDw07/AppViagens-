@@ -1,0 +1,23 @@
+package com.example.logincompose.usuario
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "viagens")
+data class Viagem(
+
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+
+    val destino: String,
+
+    val tipo: String,
+
+    val dataInicio: Long,
+
+    val dataFim: Long,
+
+    val orcamento: Double,
+
+    val userId: Int
+)

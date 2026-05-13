@@ -52,7 +52,11 @@ fun LoginScreen(
             onSenhaChange = viewModel::onSenhaChange,
 
             onLoginClick = {
-                viewModel.login()
+                viewModel.login {
+                    navController.navigate(Routes.Menu.route) {
+                        popUpTo(Routes.Login.route) { inclusive = true }
+                    }
+                }
             },
 
             onNovoUsuarioClick = {
@@ -65,17 +69,6 @@ fun LoginScreen(
         )
     }
 
-    // 🚨 navegação segura (IMPORTANTE)
-    LaunchedEffect(state.error) {
-        if (state.error == null &&
-            state.email.isNotBlank() &&
-            state.senha.isNotBlank()
-        ) {
-            navController.navigate(Routes.Menu.route) {
-                popUpTo(Routes.Login.route) { inclusive = true }
-            }
-        }
-    }
 }
 
 @Composable

@@ -8,4 +8,7 @@ interface UserDao {
 
     @Insert
     suspend fun insertUser(user: User): Long
+
+    @Query("SELECT * FROM users WHERE email = :email AND senha = :senha LIMIT 1")
+    suspend fun login(email: String, senha: String): User?
 }
