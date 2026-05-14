@@ -10,14 +10,14 @@ data class Viagem(
     val id: Int = 0,
 
     val destino: String,
-
     val tipo: String,
 
     val dataInicio: Long,
-
     val dataFim: Long,
 
     val orcamento: Double,
+
+    val totalGastos: Double = 0.0,
 
     val userId: Int
 )
