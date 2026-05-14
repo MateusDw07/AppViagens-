@@ -36,13 +36,93 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.logincompose.navigation.Routes
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.remember
+import androidx.core.content.ContextCompat
+import com.example.logincompose.AppDatabase
+import com.example.logincompose.location.LocationHelper
+import com.example.logincompose.repository.ViagemRepository
+import com.example.logincompose.viewmodel.ViagemViewModel
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(navController: NavHostController) {
+    val context = navController.context
 
+    val db = AppDatabase.getDatabase(context)
+
+    val repository = ViagemRepository(
+        db.viagemDao()
+    )
+
+    val viewModel = remember {
+        ViagemViewModel(repository)
+    }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    val locationHelper = LocationHelper(context)
+
+    val viagemAtual by viewModel
+        .viagemAtual
+        .collectAsState()
+
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract =
+                ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            if (granted) {
+
+                locationHelper.getCidade { cidade ->
+
+                    if (cidade != null) {
+
+                        viewModel.buscarViagemAtual(
+                            cidade,
+                            1
+                        )
+                    }
+                }
+            }
+        }
+
+    LaunchedEffect(Unit) {
+
+        if (
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+
+            locationHelper.getCidade { cidade ->
+
+                if (cidade != null) {
+
+                    viewModel.buscarViagemAtual(
+                        cidade,
+                        1
+                    )
+                }
+            }
+
+        } else {
+
+            launcher.launch(
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        }
+    }
 
     // 🔴 BOTÃO VOLTAR FECHA O APP
     BackHandler {
@@ -78,7 +158,62 @@ fun MenuScreen(navController: NavHostController) {
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Menu 🎉")
+                Column {
+
+                    Text("Menu 🎉")
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    viagemAtual?.let { viagem ->
+
+                        Card {
+
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+
+                                Text(
+                                    text = "Viagem Atual",
+                                    style =
+                                        MaterialTheme.typography.titleLarge
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text("Destino: ${viagem.destino}")
+
+                                Text(
+                                    "Data início: ${
+                                        formatarData(viagem.dataInicio)
+                                    }"
+                                )
+
+                                Text(
+                                    "Data fim: ${
+                                        formatarData(viagem.dataFim)
+                                    }"
+                                )
+
+                                Text("Tipo: ${viagem.tipo}")
+
+                                Text(
+                                    "Orçamento: R$ ${
+                                        viagem.orcamento
+                                    }"
+                                )
+
+                                Text(
+                                    "Total gastos: R$ ${
+                                        viagem.totalGastos
+                                    }"
+                                )
+                            }
+                        }
+
+                    } ?: Text(
+                        "Nenhuma viagem encontrada para sua localização."
+                    )
+                }
             }
         }
     }
@@ -133,4 +268,5 @@ fun DrawerItem(
         Text(text)
     }
 }
+
 
