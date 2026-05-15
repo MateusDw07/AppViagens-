@@ -51,6 +51,11 @@ import com.example.logincompose.viewmodel.ViagemViewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.logincompose.viewmodel.ViagemViewModelFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,10 +67,12 @@ fun MenuScreen(navController: NavHostController) {
     val repository = ViagemRepository(
         db.viagemDao()
     )
-
-    val viewModel = remember {
-        ViagemViewModel(repository)
+    val factory = remember {
+        ViagemViewModelFactory(repository)
     }
+
+    val viewModel: ViagemViewModel =
+        viewModel(factory = factory)
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -267,6 +274,15 @@ fun DrawerItem(
         Spacer(modifier = Modifier.width(16.dp))
         Text(text)
     }
+}
+fun formatarData(timestamp: Long): String {
+
+    val formatter = SimpleDateFormat(
+        "dd/MM/yyyy",
+        Locale.getDefault()
+    )
+
+    return formatter.format(Date(timestamp))
 }
 
 

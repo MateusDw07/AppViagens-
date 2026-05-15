@@ -1,6 +1,5 @@
 package com.example.logincompose.telas
-import kotlinx.coroutines.withContext
-import android.widget.Toast
+
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,42 +12,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.logincompose.AppDatabase
+import com.example.logincompose.repository.ViagemRepository
 import com.example.logincompose.usuario.Viagem
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.example.logincompose.viewmodel.ViagemViewModel
+import com.example.logincompose.viewmodel.ViagemViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MinhasViagensScreen(userId: Int) {
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
-    var viagens by remember {
-        mutableStateOf<List<Viagem>>(emptyList())
+    val db = remember {
+        AppDatabase.getDatabase(context)
     }
 
-    fun carregarViagens() {
-
-        scope.launch {
-
-            val db = AppDatabase.getDatabase(context)
-
-            val lista = withContext(Dispatchers.IO) {
-
-                db.viagemDao().listarPorUsuario(userId)
-            }
-
-            viagens = lista
-        }
+    val repository = remember {
+        ViagemRepository(db.viagemDao())
     }
+
+    val factory = remember {
+        ViagemViewModelFactory(repository)
+    }
+
+    val viewModel: ViagemViewModel =
+        viewModel(factory = factory)
+
+    val viagens by viewModel.viagens.collectAsState()
 
     LaunchedEffect(Unit) {
-        carregarViagens()
+        viewModel.carregarViagens(userId)
     }
 
     LazyColumn(
@@ -61,6 +58,7 @@ fun MinhasViagensScreen(userId: Int) {
         items(viagens, key = { it.id }) { viagem ->
 
             val dismissState = rememberSwipeToDismissBoxState()
+
             LaunchedEffect(dismissState.currentValue) {
 
                 if (
@@ -71,33 +69,15 @@ fun MinhasViagensScreen(userId: Int) {
                     SwipeToDismissBoxValue.StartToEnd
                 ) {
 
-                    val db = AppDatabase.getDatabase(context)
-
-                    withContext(Dispatchers.IO) {
-
-                        db.viagemDao().delete(viagem)
-                    }
-
-                    carregarViagens()
+                    viewModel.deletarViagem(
+                        viagem,
+                        userId
+                    )
                 }
-
-
             }
 
             var mostrarDialog by remember {
                 mutableStateOf(false)
-            }
-
-            var destinoEdit by remember {
-                mutableStateOf(viagem.destino)
-            }
-
-            var tipoEdit by remember {
-                mutableStateOf(viagem.tipo)
-            }
-
-            var orcamentoEdit by remember {
-                mutableStateOf(viagem.orcamento.toString())
             }
 
             SwipeToDismissBox(
@@ -105,17 +85,12 @@ fun MinhasViagensScreen(userId: Int) {
                 backgroundContent = {}
             ) {
 
-
-
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .combinedClickable(
-
                             onClick = {},
-
                             onLongClick = {
-
                                 mostrarDialog = true
                             }
                         )
@@ -144,142 +119,25 @@ fun MinhasViagensScreen(userId: Int) {
                                 )
                             }
 
-                            Text(
-                                text = viagem.destino,
-                                style = MaterialTheme.typography.titleLarge
-                            )
+                            Text(viagem.destino)
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        Text("Tipo: ${viagem.tipo}")
+                        Text("Orçamento: R$ ${viagem.orcamento}")
+
+
                         Text(
-                            text = "Data início: ${
-                                formatarData(viagem.dataInicio)
-                            }"
+                            "Início: ${formatarData(viagem.dataInicio)}"
                         )
 
                         Text(
-                            text = "Data fim: ${
-                                formatarData(viagem.dataFim)
-                            }"
-                        )
-
-                        Text(
-                            text = "Orçamento: R$ ${viagem.orcamento}"
+                            "Fim: ${formatarData(viagem.dataFim)}"
                         )
                     }
                 }
             }
-            if (mostrarDialog) {
-
-                AlertDialog(
-
-                    onDismissRequest = {
-                        mostrarDialog = false
-                    },
-
-                    title = {
-                        Text("Editar Viagem")
-                    },
-
-                    text = {
-
-                        Column {
-
-                            OutlinedTextField(
-                                value = destinoEdit,
-                                onValueChange = {
-                                    destinoEdit = it
-                                },
-                                label = {
-                                    Text("Destino")
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            OutlinedTextField(
-                                value = tipoEdit,
-                                onValueChange = {
-                                    tipoEdit = it
-                                },
-                                label = {
-                                    Text("Tipo")
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            OutlinedTextField(
-                                value = orcamentoEdit,
-                                onValueChange = {
-                                    orcamentoEdit = it
-                                },
-                                label = {
-                                    Text("Orçamento")
-                                }
-                            )
-                        }
-                    },
-
-                    confirmButton = {
-
-                        Button(
-                            onClick = {
-
-                                scope.launch {
-
-                                    val db = AppDatabase.getDatabase(context)
-
-                                    withContext(Dispatchers.IO) {
-
-                                        db.viagemDao().update(
-
-                                            viagem.copy(
-                                                destino = destinoEdit,
-                                                tipo = tipoEdit,
-                                                orcamento = orcamentoEdit.toDouble()
-                                            )
-                                        )
-                                    }
-
-                                    carregarViagens()
-
-                                    mostrarDialog = false
-                                }
-                            }
-                        ) {
-
-                            Text("Salvar")
-                        }
-                    },
-
-                    dismissButton = {
-
-                        Button(
-                            onClick = {
-                                mostrarDialog = false
-                            }
-                        ) {
-
-                            Text("Cancelar")
-                        }
-                    }
-                )
-            }
         }
     }
-
-
-}
-
-
-fun formatarData(data: Long): String {
-
-    val formato = SimpleDateFormat(
-        "dd/MM/yyyy",
-        Locale.getDefault()
-    )
-
-    return formato.format(Date(data))
 }

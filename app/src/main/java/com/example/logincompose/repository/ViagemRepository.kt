@@ -19,4 +19,12 @@ class ViagemRepository(
             userId
         )
     }
+
+    suspend fun listarPorUsuario(userId: Int): List<Viagem> {
+        return viagemDao.listarPorUsuario(userId)
+    }
+
+    suspend fun deletarViagem(viagem: Viagem) {
+        viagemDao.delete(viagem)
+    }
 }

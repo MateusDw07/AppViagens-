@@ -10,10 +10,11 @@ ui = "1.10.6"
 navigationRuntimeKtx = "2.9.7"
 navigationCompose = "2.9.7"
 kotlin = "2.2.10"
-agp = "9.0.1"
-ksp = "2.2.10-2.0.2"
+agp = "9.1.1"
+ksp = "2.3.2"
 room = "2.7.2"
 material3 = "1.4.0"
+foundation = "1.11.1"
 
 
 [libraries]
@@ -41,6 +42,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
